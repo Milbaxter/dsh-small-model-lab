@@ -7,3 +7,5 @@ runs/
 private-tasks/
 
 node_modules/
+
+.venv-harbor/

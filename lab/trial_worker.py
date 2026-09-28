@@ -12,12 +12,14 @@ from lab.profiles import compose
 from lab.worker import provider_patch
 
 
-def run(run_dir, model, arm, stages, base_url='http://gateway:8000/v1'):
+def run(run_dir, model, arm, stages, base_url='http://gateway:8000/v1', workspace_path=None, dsh_bin=None):
     root = Path(run_dir)
-    home, workspace = root / 'home', root / 'workspace'
+    root.mkdir(parents=True, exist_ok=True)
+    home, workspace = root / 'home', Path(workspace_path) if workspace_path else root / 'workspace'
     home.mkdir(exist_ok=False)
     workspace.mkdir(exist_ok=True)
-    binary, profile, patch, provenance = compose(arm, root, provider_patch(base_url, model))
+    binary, profile, patch, provenance = compose(arm, root, provider_patch(base_url, model), binary_override=dsh_bin)
+    binary = dsh_bin or binary
     started = time.monotonic()
     manifest = {'status': 'running', 'provenance': provenance, 'model': model, 'stages': 0}
     try:

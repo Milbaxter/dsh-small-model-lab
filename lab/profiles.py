@@ -25,10 +25,10 @@ Loader.add_constructor('tag:yaml.org,2002:js', lambda loader, node: JS(loader.co
 Dumper.add_representer(JS, lambda dumper, value: dumper.represent_scalar('tag:yaml.org,2002:js', str(value)))
 
 
-def compose(arm, run_dir, provider_rows):
+def compose(arm, run_dir, provider_rows, binary_override=None):
     if arm not in ARMS:
         raise ValueError(f'Unknown arm: {arm}')
-    binary = ROOT / 'node_modules/.bin/dsh'
+    binary = Path(binary_override) if binary_override else ROOT / 'node_modules/.bin/dsh'
     if not binary.exists():
         raise RuntimeError('Run npm ci to install the pinned DSH CLI')
     profile = 'sdk-minimal' if arm == 'sdk-minimal' else 'sdk'

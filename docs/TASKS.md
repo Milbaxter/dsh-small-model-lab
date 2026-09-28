@@ -54,3 +54,29 @@ sessions/             # optional multi-session script (memory family)
 grader                # hidden; returns pass/fail + details
 budget                # max steps, tokens, wall-clock
 ```
+
+## Initial bank implementation (2026-09-28)
+
+A separate **private** task bank now contains 100 frozen procedural instances,
+with the planned 40/40/20 split and 35/25/20/20 family mix. Its initial commit is
+`7aee4dffd1ac76a8fc4f2491c4486514a5ce7791`. All 100 graders passed reference,
+starting-state, empty-submission and corrupted-submission validation. A reference
+solution also passed the isolated Docker grading path on UpCloud.
+
+Code-repair tasks exercise revision reduction, interval merging, dependency
+ordering, quota allocation and event processing. Recovery variants inject local
+export corruption, missing paths, transient failures and stale verification data.
+Memory uses separate SDK runtimes/sessions with run-owned persistence; context
+uses a continuing session with staged background material. Exact instances,
+reference answers and hidden cases remain private. This bank is **uncalibrated**;
+validation is not evidence of an appropriate difficulty or real-world gains.
+
+Submitted Python runs in a separate networkless grading container. Only test
+inputs enter that container; expected answers stay in the host controller, which
+compares returned values. A submission's own claim that it passed is ignored.
+Future memory prompts are delivered over stdin only after the preceding stage
+finishes. Gateway traces and scores stay outside the actor mount.
+
+Related instances share archetypes. Report task-cluster intervals as planned and
+an archetype-cluster sensitivity check. Terminal-Bench remains the independent
+real-task gate; this synthetic development bank is not a substitute for it.

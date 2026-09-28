@@ -115,6 +115,18 @@ def memory_available():
     return int(next(l.split()[1] for l in path.read_text().splitlines() if l.startswith('MemAvailable:')))//1024
 
 
+def reserved_memory_headroom():
+    """Respect other tasks' containers without stopping or modifying them."""
+    path=Path('/proc/meminfo')
+    if not path.exists():return None
+    total=int(next(l.split()[1] for l in path.read_text().splitlines() if l.startswith('MemTotal:')))//1024
+    ids=subprocess.check_output(['docker','ps','-q'],text=True).split()
+    if not ids:return total
+    containers=json.loads(subprocess.check_output(['docker','inspect',*ids],text=True))
+    reserved=sum((c['HostConfig']['Memory']//1024**2) if c['HostConfig']['Memory'] else total for c in containers)
+    return total-reserved
+
+
 def task_hash(task):
     return hashlib.sha256(json.dumps(task,sort_keys=True).encode()).hexdigest()
 
@@ -127,9 +139,11 @@ def main():
     parser.add_argument('--repetitions',type=int,default=5)
     parser.add_argument('--limit',type=int)
     parser.add_argument('--family')
+    parser.add_argument('--per-family',type=int,help='Calibration-only balanced cap per family')
     parser.add_argument('--state',type=Path,default=ROOT/'.local/benchmark')
     parser.add_argument('--config',type=Path,default=ROOT/'config/openrouter.json')
     parser.add_argument('--min-free-memory-mib',type=int,default=768)
+    parser.add_argument('--wait-capacity',action='store_true')
     args=parser.parse_args()
     if args.repetitions<1 or args.repetitions>5:parser.error('Repetitions must be 1..5')
     args.state.mkdir(parents=True,exist_ok=True,mode=0o700)
@@ -145,6 +159,13 @@ def main():
     if dirty:raise SystemExit('Task bank must be committed before a scored sweep')
     tasks=[json.loads(p.read_text()) for p in sorted((args.bank/'tasks').glob('*.json'))]
     tasks=[t for t in tasks if (args.split=='all' or t['split']==args.split) and (not args.family or t['family']==args.family)]
+    if args.per_family:
+        counts={}; selected=[]
+        for task in tasks:
+            family=task['family']
+            if counts.get(family,0)<args.per_family:
+                selected.append(task);counts[family]=counts.get(family,0)+1
+        tasks=selected
     if args.limit:tasks=tasks[:args.limit]
     ledger=Ledger(ROOT/'.local/bench-audit/budget.sqlite')
     db=open_db(args.state/'trials.sqlite')
@@ -165,10 +186,23 @@ def main():
                         raise SystemExit('Prior trial is still live; inspect it before resuming')
                     # Preserve failed/crashed attempt files and its reserved spend.
                     ledger.close(prior[0])
-                available=memory_available()
-                if available is not None and available<args.min_free_memory_mib:
-                    raise SystemExit(f'Insufficient shared-host headroom: {available} MiB available')
-                if shutil.disk_usage(args.state).free<2*1024**3:raise SystemExit('Less than 2 GiB disk headroom')
+                last_wait_notice=0
+                while True:
+                    available=memory_available()
+                    reserved=reserved_memory_headroom()
+                    issue=None
+                    if available is not None and available<args.min_free_memory_mib:
+                        issue=f'Only {available} MiB currently available'
+                    if reserved is not None and reserved<512:
+                        issue=f'Other containers reserve the host; {reserved} MiB unreserved'
+                    if shutil.disk_usage(args.state).free<2*1024**3:
+                        issue='Less than 2 GiB disk headroom'
+                    if not issue:break
+                    if not args.wait_capacity:raise SystemExit(issue)
+                    if time.monotonic()-last_wait_notice>=60:
+                        print(json.dumps({'status':'waiting_capacity','reason':issue}),flush=True)
+                        last_wait_notice=time.monotonic()
+                    time.sleep(10)
                 run_id=uuid.uuid4().hex;run_dir=runs/run_id;run_dir.mkdir(mode=0o700)
                 workspace=run_dir/'workspace';workspace.mkdir();write_files(workspace,task['workspace'])
                 budget=task['budget']

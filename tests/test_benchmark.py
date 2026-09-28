@@ -50,3 +50,17 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(failure_tag('completed',False,{'requests':20},20),'MAX_TURNS')
         self.assertEqual(failure_tag('completed',False,{'malformed_calls':1},20),'BAD_EDIT')
         self.assertIsNone(failure_tag('completed',True,{},20))
+
+
+class IndependentGateTests(unittest.TestCase):
+    def test_terminal_gate_requires_complete_official_paired_evidence(self):
+        from lab.terminal_gate import compare
+        lock={'tasks':[{'id':'a'},{'id':'b'}],'k':5,'dataset_commit':'pinned'}
+        base=[{'task_id':t,'repetition':r,'dataset_commit':'pinned','verifier':'harbor-official',
+               'accounting_complete':True,'reward':0} for t in ('a','b') for r in range(5)]
+        cand=[{**r,'reward':1} for r in base]
+        self.assertTrue(compare(lock,base,cand)['independent_gate_passed'])
+        self.assertFalse(compare(lock,base,base)['independent_gate_passed'])
+        with self.assertRaises(ValueError):compare(lock,base,cand[:-1])
+        with self.assertRaises(ValueError):compare(lock,base,[{**r,'infrastructure_error':True} for r in cand])
+        with self.assertRaises(ValueError):compare(lock,base,[{**r,'verifier':'custom'} for r in cand])
