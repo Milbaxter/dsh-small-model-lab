@@ -64,3 +64,25 @@ class IndependentGateTests(unittest.TestCase):
         with self.assertRaises(ValueError):compare(lock,base,cand[:-1])
         with self.assertRaises(ValueError):compare(lock,base,[{**r,'infrastructure_error':True} for r in cand])
         with self.assertRaises(ValueError):compare(lock,base,[{**r,'verifier':'custom'} for r in cand])
+
+
+class ReportingTests(unittest.TestCase):
+    def test_partial_runs_are_provisional_and_hidden_metadata_never_exported(self):
+        from lab.report import summarize
+        rows=[{'task_id':'private-id','archetype':'private-template','arm':'standard','split':'heldout',
+            'model':'qwen','repetition':0,'result':{'passed':False,'accounting_complete':True,
+            'failure_tag':'REASONING','metrics':{'prompt_tokens':100,'completion_tokens':10,'cost_usd':.01},
+            'trace':'/private/trace','hidden':'answer'}}]
+        report=summarize(rows)
+        self.assertTrue(report['provisional'])
+        self.assertIsNone(report['cells'][0]['tokens_per_solve'])
+        self.assertNotIn('private-id',json.dumps(report))
+        self.assertNotIn('/private/trace',json.dumps(report))
+
+    def test_missing_compaction_invalidates_context_claim(self):
+        from lab.report import summarize
+        rows=[{'task_id':'x','archetype':'ctx','arm':'standard','split':'dev','model':'qwen','repetition':r,
+            'result':{'passed':True,'accounting_complete':True,'failure_tag':None,
+                'requires_compaction':True,'compaction_events_observed':0,
+                'metrics':{'prompt_tokens':10,'completion_tokens':2,'cost_usd':.01}}} for r in range(5)]
+        self.assertTrue(summarize(rows)['provisional'])
