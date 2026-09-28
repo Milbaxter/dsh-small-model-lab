@@ -170,6 +170,7 @@ def main():
     ledger=Ledger(ROOT/'.local/bench-audit/budget.sqlite')
     db=open_db(args.state/'trials.sqlite')
     runs=args.state/'runs';runs.mkdir(exist_ok=True)
+    controller_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     completed=0
     for rep in range(args.repetitions):
         for task in tasks:
@@ -230,7 +231,7 @@ def main():
                 result={'passed':bool(passed),'failure_tag':tag,'status':status,'metrics':metrics,
                         'wall_seconds':time.monotonic()-started,'stages_completed':stages,'compaction_events_observed':compactions,
                         'requires_compaction':task.get('requires_compaction',False),'identity':identity,'code_commit':code_commit,
-                        'trace':str(trace),'run_dir':str(run_dir),'minimum_resources':task['minimum_resources'],
+                        'controller_sha256':controller_sha256,'trace':str(trace),'run_dir':str(run_dir),'minimum_resources':task['minimum_resources'],
                         'allocated_resources':{'cpus':.75,'memory_mib':384}}
                 # Scores are provisional until controller accounting and family coverage checks pass.
                 result['accounting_complete']=metrics['requests']==metrics['accounted_requests']
