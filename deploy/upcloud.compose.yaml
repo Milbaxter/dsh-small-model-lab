@@ -1,0 +1,12 @@
+# Constrained single-worker deployment on a shared 4 GiB UpCloud host.
+services:
+  gateway:
+    cpus: 0.25
+    mem_limit: 128m
+    oom_score_adj: 500
+  runner:
+    cpus: 0.75
+    mem_limit: 384m
+    oom_score_adj: 800
+    tmpfs:
+      - /tmp:exec,size=128m

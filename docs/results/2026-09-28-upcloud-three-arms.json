@@ -1,0 +1,72 @@
+{
+  "date": "2026-09-28",
+  "kind": "public_plumbing_fixture_not_benchmark",
+  "host": "UpCloud fi-hel1, resource-limited containers",
+  "model": "qwen/qwen3-8b",
+  "provider": "Alibaba",
+  "dsh_cli": "0.1.7-rc.2",
+  "results": [
+    {
+      "arm": "sdk-minimal",
+      "passed": true,
+      "wall_seconds": 6.538133802998345,
+      "requests": 3,
+      "tools": 1,
+      "prompt_tokens": 1210,
+      "completion_tokens": 96,
+      "reported_cost_usd": 0.00018525,
+      "provenance": {
+        "arm": "sdk-minimal",
+        "cli_version": "0.1.7-rc.2"
+      }
+    },
+    {
+      "arm": "standard",
+      "passed": true,
+      "wall_seconds": 16.20411836798303,
+      "requests": 4,
+      "tools": 26,
+      "prompt_tokens": 24768,
+      "completion_tokens": 306,
+      "reported_cost_usd": 0.003037086,
+      "provenance": {
+        "arm": "standard",
+        "cli_version": "0.1.7-rc.2",
+        "upstream_standard_sha256": "6cd2f197737fc94a45e487d0bb57869461dd6f392d45f6429b576e75d973eda8",
+        "compaction": {
+          "headroomTokens": 1024,
+          "thresholdRatio": 0.75,
+          "retainTokens": 2048,
+          "maxTokens": 1024
+        }
+      }
+    },
+    {
+      "arm": "standard+autonomy-policy",
+      "passed": true,
+      "wall_seconds": 12.228431522991741,
+      "requests": 3,
+      "tools": 26,
+      "prompt_tokens": 19354,
+      "completion_tokens": 217,
+      "reported_cost_usd": 0.0023631529999999998,
+      "provenance": {
+        "arm": "standard+autonomy-policy",
+        "cli_version": "0.1.7-rc.2",
+        "upstream_standard_sha256": "6cd2f197737fc94a45e487d0bb57869461dd6f392d45f6429b576e75d973eda8",
+        "compaction": {
+          "headroomTokens": 1024,
+          "thresholdRatio": 0.75,
+          "retainTokens": 2048,
+          "maxTokens": 1024
+        },
+        "policy_sha256": "990b5bad73f770288a51c9ae8f8cb3b1cd461c4592662b4217d1838dcb14bd94"
+      }
+    }
+  ],
+  "limitations": [
+    "One public fixture per arm; no inference about relative capability.",
+    "Standard arms share a documented small-context compaction adaptation.",
+    "Hosted model revision and quantization are provider-managed."
+  ]
+}

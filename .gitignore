@@ -5,3 +5,5 @@ __pycache__/
 .local/
 runs/
 private-tasks/
+
+node_modules/

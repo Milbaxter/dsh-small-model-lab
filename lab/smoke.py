@@ -20,6 +20,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--backend", choices=("vllm", "openrouter"), default="openrouter")
+    parser.add_argument("--compose-override")
+    parser.add_argument("--arm", default="sdk-minimal", choices=("sdk-minimal", "standard", "standard+autonomy-policy"))
+    parser.add_argument("--modern", action="store_true")
     args = parser.parse_args()
     if args.timeout <= 0:
         parser.error("--timeout must be positive")
@@ -31,10 +34,15 @@ def main():
     compose = ["docker", "compose"]
     if args.backend == "openrouter":
         compose += ["-f", "compose.openrouter.yaml", "--env-file", ".local/openrouter.env"]
+    if args.compose_override:
+        compose += ["-f", args.compose_override]
     command = compose + ["run", "--rm", "--no-deps", "--name", container,
                "runner", "--run-dir", "/runs/" + run_id]
     if args.backend == "openrouter":
         command += ["--base-url", "http://gateway:8000/v1", "--config", "config/openrouter.json"]
+    command += ["--arm", args.arm]
+    if args.modern:
+        command.append("--modern")
     status = "error"
     try:
         subprocess.run(command, cwd=ROOT, env=env, check=True, timeout=args.timeout)

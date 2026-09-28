@@ -28,3 +28,30 @@ On 2026-09-28, the [model endpoint catalog](https://openrouter.ai/api/v1/models/
 ## What this establishes
 
 A passing smoke means the real hosted model selected a DSH tool, produced the expected fixture file, and finished a recorded session. It does not establish general capability, baseline superiority, calibration, held-out performance, memory behavior, or a working improvement loop. The public smoke fixture is excluded from future benchmark scores.
+
+## UpCloud CPU execution
+
+The lab is installed at `/opt/dsh-small-model-lab` on the existing Northlight
+UpCloud host. `deploy/upcloud.compose.yaml` limits one runner to 0.75 CPU and
+384 MiB RAM, and the gateway to 0.25 CPU and 128 MiB. No host ports are published.
+The initial live UpCloud fixture and both standard arms passed; records are in
+`docs/results/`. Use `--modern --arm standard` or
+`--modern --arm standard+autonomy-policy` with `lab.smoke` and
+`--compose-override deploy/upcloud.compose.yaml`. See `PROFILES.md` for the runtime
+pin and the small-context adaptation.
+
+## Benchmark spending ledger
+
+The benchmark gateway mode (`LAB_BENCHMARK=1`) requires a controller-registered
+run token from `lab.budget.Ledger`. It rejects the shared plumbing token. Each
+registration binds immutable model/routing/sampling configuration, a deadline,
+a total token allowance and a request count. The controller alone mounts the
+SQLite ledger; task containers receive only their own short-lived run token.
+
+A transaction reserves conservative prompt/output cost and tokens before each
+upstream request. Complete usage settles that reservation. Lost responses retain
+the reservation across restarts. The initial ledger's global budget defaults to
+$30; reopening it cannot raise that cap. SQLite serializes concurrent admission.
+These controls are tested against a scripted HTTP upstream. The larger benchmark
+controller and private task bank are still being implemented; the deployed
+plumbing gateway retains its original 20-request cap until that controller is ready.

@@ -15,6 +15,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class SDKSmoke(unittest.TestCase):
     def test_tool_execution_and_trace(self):
+        self.run_scripted_session()
+
+    def test_released_presets(self):
+        catalogs = {}
+        for arm in ("sdk-minimal", "standard", "standard+autonomy-policy"):
+            with self.subTest(arm=arm):
+                catalogs[arm] = self.run_scripted_session(arm, True)
+        self.assertEqual(catalogs["standard"], catalogs["standard+autonomy-policy"])
+        self.assertGreater(len(catalogs["standard"]), len(catalogs["sdk-minimal"]))
+
+    def run_scripted_session(self, arm="sdk-minimal", modern=False):
         requests = []
 
         class Handler(BaseHTTPRequestHandler):
@@ -30,6 +41,7 @@ class SDKSmoke(unittest.TestCase):
                 if len(requests) == 1:
                     delta = {"role": "assistant", "tool_calls": [{"index": 0, "id": "call_smoke",
                         "type": "function", "function": {"name": "bash", "arguments": json.dumps({
+                            **({"description": "Create and verify the test file"} if arm != "sdk-minimal" else {}),
                             "command": "printf '%s' '{\"status\":\"ok\",\"sum\":42}' > smoke.json; cat smoke.json"})}}]}
                     finish = "tool_calls"
                 else:
@@ -57,7 +69,7 @@ class SDKSmoke(unittest.TestCase):
                 script = (
                     "import json,sys; from lab.worker import run_once,ROOT; "
                     "run_once(sys.argv[1],sys.argv[2],'Create smoke.json and verify it.',"
-                    "json.loads((ROOT/'config/model.json').read_text()))"
+                    f"json.loads((ROOT/'config/model.json').read_text()), arm={arm!r}, modern={modern!r})"
                 )
                 proc = subprocess.Popen([sys.executable, "-c", script, str(root / "run"),
                     f"http://127.0.0.1:{server.server_port}/v1"], env=env,
@@ -69,6 +81,7 @@ class SDKSmoke(unittest.TestCase):
                     out, err = proc.communicate()
                     self.fail("SDK timeout: " + err[-4000:])
                 self.assertEqual(proc.returncode, 0, out + err[-6000:])
+                self.assertTrue((root / "run/workspace/smoke.json").exists(), json.dumps({"tools": requests[0].get("tools"), "last": requests[-1]["messages"][-3:]}, indent=2))
                 self.assertEqual(json.loads((root / "run/workspace/smoke.json").read_text()),
                                  {"status": "ok", "sum": 42})
                 self.assertEqual(len(requests), 2)
@@ -79,6 +92,12 @@ class SDKSmoke(unittest.TestCase):
                 self.assertGreater((root / "run/notifications.jsonl").stat().st_size, 0)
                 self.assertTrue(list((root / "run/home/sessions").rglob("*.jsonl")))
                 self.assertEqual(json.loads((root / "run/manifest.json").read_text())["status"], "completed")
+                policy_present = 'Autonomous execution discipline' in json.dumps(requests[0]['messages'])
+                self.assertEqual(policy_present, arm == 'standard+autonomy-policy')
+                if arm != 'sdk-minimal':
+                    logs = ''.join(p.read_text() for p in (root / 'run/home/sessions').rglob('*.jsonl'))
+                    self.assertIn('agent-preset/selected', logs)
+                return sorted(t['function']['name'] for t in requests[0]['tools'])
         finally:
             server.shutdown()
             server.server_close()

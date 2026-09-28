@@ -6,3 +6,5 @@ private-tasks
 __pycache__
 **/__pycache__
 .env
+
+node_modules
