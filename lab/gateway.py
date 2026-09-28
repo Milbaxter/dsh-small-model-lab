@@ -42,12 +42,34 @@ def create_server(*, secret_path="/run/secrets/openrouter_key", audit_dir="/audi
     log_path = audit_dir / "gateway.jsonl"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     # Count durable attempts, including errors: retries consume the same budget.
-    attempts = sum(1 for line in log_path.read_text().splitlines()
-                   if json.loads(line).get("kind") == "request") if log_path.exists() else 0
+    if ledger:
+        with ledger.transaction() as db:
+            attempts = db.execute('SELECT COUNT(*) FROM requests').fetchone()[0]
+    else:
+        attempts = 0
+        if log_path.exists():
+            with log_path.open() as prior:
+                for line in prior:
+                    try:
+                        attempts += json.loads(line).get('kind') == 'request'
+                    except ValueError:
+                        pass  # A partial last audit line does not reset prior spend.
 
     def record(data):
+        entry = json.dumps({"at": datetime.now(timezone.utc).isoformat(), **data}) + "\n"
+        if ledger and data.get('run_id'):
+            runs = log_path.parent / 'runs'
+            runs.mkdir(exist_ok=True)
+            # Controller registers UUID ids; hash before using any id as a filename.
+            with (runs / (Ledger.digest(data['run_id']) + '.jsonl')).open('a') as log:
+                log.write(entry)
         with log_path.open("a") as log:
-            log.write(json.dumps({"at": datetime.now(timezone.utc).isoformat(), **data}) + "\n")
+            # Full benchmark traces live in separate files; global index stays small.
+            if ledger:
+                index = {k:v for k,v in data.items() if k not in ('payload','line')}
+                log.write(json.dumps({"at": datetime.now(timezone.utc).isoformat(), **index}) + "\n")
+            else:
+                log.write(entry)
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -109,12 +131,12 @@ def create_server(*, secret_path="/run/secrets/openrouter_key", audit_dir="/audi
             try:
                 response = urllib.request.urlopen(request, timeout=90)
             except urllib.error.HTTPError as exc:
-                record({"kind": "error", "attempt": attempts, "status": exc.code,
+                record({"kind": "error", "attempt": attempts, "run_id": run_id, "request_id": request_id, "status": exc.code,
                         "detail": exc.read(8192).decode(errors="replace")})
                 self.send_error(exc.code, "OpenRouter request rejected; inspect gateway audit")
                 return
             except (urllib.error.URLError, TimeoutError):
-                record({"kind": "error", "attempt": attempts, "status": "network"})
+                record({"kind": "error", "attempt": attempts, "run_id": run_id, "request_id": request_id, "status": "network"})
                 self.send_error(502)
                 return
             self.send_response(200)
@@ -132,12 +154,12 @@ def create_server(*, secret_path="/run/secrets/openrouter_key", audit_dir="/audi
                                     usage = chunk['usage']
                             except ValueError:
                                 pass
-                        record({"kind": "response", "attempt": attempts,
+                        record({"kind": "response", "attempt": attempts, "run_id": run_id, "request_id": request_id,
                                 "line": line.decode(errors="replace").rstrip()})
                         self.wfile.write(line)
                         self.wfile.flush()
             except (BrokenPipeError, ConnectionResetError, TimeoutError, OSError):
-                record({"kind": "interrupted", "attempt": attempts})
+                record({"kind": "interrupted", "attempt": attempts, "run_id": run_id, "request_id": request_id})
             finally:
                 # Missing accounting keeps the worst-case charge; never assume free.
                 if (ledger and usage and isinstance(usage.get('total_tokens'), int)
