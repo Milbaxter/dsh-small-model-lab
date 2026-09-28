@@ -2,9 +2,9 @@
 
 **Cheap, honest, iterative testing of DeepSeek Harness (DSH) plugin setups, using a small Qwen model as the test subject.**
 
-Status: **P0 live smoke passed on UpCloud with Qwen3-8B through OpenRouter. CPU-only evaluation containers share the existing Northlight host under strict resource limits. The private benchmark and improvement loop are in development.**
+Status: **Paused at the owner's request on 2026-09-28.** The UpCloud/OpenRouter runner and independent Terminal-Bench gate are implemented in [PR #1](https://github.com/Milbaxter/dsh-small-model-lab/pull/1). Live setup checks passed, but calibration and the full benchmark comparisons are unfinished. **No capability improvement or final champion has been established.**
 
-Start with [OpenRouter setup](docs/OPENROUTER.md) for hosted inference, or [the UpCloud P0 runbook](docs/RUNBOOK.md): read-only UpCloud preflight, pinned Qwen/vLLM Compose deployment, disposable DSH smoke runner, and local integration checks. The private task bank, baseline comparison and improvement loop remain planned.
+Read the [work report and lessons learned](docs/2026-09-28-WORK-REPORT.md) for completed work, verification, limitations, the UpCloud quota blocker and restart requirements. The benchmark controller and its gateway have been stopped; experiment state was retained.
 
 ## Why
 
@@ -21,6 +21,7 @@ A small local model (Qwen3-8B) fixes both. It fails often enough that harness ch
 
 | Doc | What it covers |
 |---|---|
+| [Work report: 2026-09-28](docs/2026-09-28-WORK-REPORT.md) | What was built and run, lessons learned, stopping state and remaining work |
 | [docs/PLAN.md](docs/PLAN.md) | The full plan: architecture, anti-overfitting gates, build phases, milestones |
 | [docs/INFRA.md](docs/INFRA.md) | Hardware choice (UpCloud L40S), model serving, DSH provider wiring, cost budget |
 | [docs/TASKS.md](docs/TASKS.md) | Task bank design: families, splits, difficulty calibration, grading |
