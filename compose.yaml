@@ -1,0 +1,69 @@
+name: dsh-small-model-lab
+services:
+  vllm:
+    image: vllm/vllm-openai:v0.30.0@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90
+    gpus: all
+    shm_size: 4gb
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      VLLM_API_KEY: ${LAB_VLLM_KEY:?Create a private .env with LAB_VLLM_KEY}
+      VLLM_NO_USAGE_STATS: "1"
+      DO_NOT_TRACK: "1"
+      HF_HUB_DISABLE_TELEMETRY: "1"
+    volumes:
+      - model-cache:/root/.cache/huggingface
+    networks: [download, inference]
+    command:
+      - Qwen/Qwen3-8B
+      - --revision
+      - b968826d9c46dd6066d109eabc6255188de91218
+      - --dtype
+      - bfloat16
+      - --max-model-len
+      - "16384"
+      - --max-num-seqs
+      - "4"
+      - --gpu-memory-utilization
+      - "0.90"
+      - --seed
+      - "1729"
+      - --enable-auto-tool-choice
+      - --tool-call-parser
+      - hermes
+      - --default-chat-template-kwargs
+      - '{"enable_thinking":false}'
+      - --generation-config
+      - vllm
+      - --override-generation-config
+      - '{"temperature":0.7,"top_p":0.8,"max_new_tokens":2048}'
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      retries: 80
+      start_period: 5m
+  runner:
+    profiles: [smoke]
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.runner
+    environment:
+      LAB_VLLM_KEY: ${LAB_VLLM_KEY:?Create a private .env with LAB_VLLM_KEY}
+    networks: [inference]
+    volumes:
+      - ${LAB_RUNS_DIR:-./runs}:/runs
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - /tmp:exec,size=1g
+    cpus: 2
+    mem_limit: 4g
+    pids_limit: 256
+networks:
+  download: {}
+  inference:
+    internal: true
+volumes:
+  model-cache: {}

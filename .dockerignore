@@ -1,0 +1,8 @@
+.git
+.venv
+.local
+runs
+private-tasks
+__pycache__
+**/__pycache__
+.env

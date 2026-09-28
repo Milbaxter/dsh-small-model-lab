@@ -1,0 +1,48 @@
+name: dsh-small-model-lab-openrouter
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.gateway
+    environment:
+      LAB_VLLM_KEY: ${LAB_VLLM_KEY:?Set the local gateway key}
+    secrets: [openrouter_key]
+    volumes:
+      - ./.local/audit:/audit
+    networks: [egress, inference]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    cpus: 1
+    mem_limit: 256m
+    pids_limit: 64
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  runner:
+    profiles: [smoke]
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.runner
+    environment:
+      LAB_VLLM_KEY: ${LAB_VLLM_KEY:?Set the local gateway key}
+    networks: [inference]
+    volumes:
+      - ${LAB_RUNS_DIR:-./runs}:/runs
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - /tmp:exec,size=1g
+    cpus: 2
+    mem_limit: 4g
+    pids_limit: 256
+networks:
+  egress: {}
+  inference:
+    internal: true
+secrets:
+  openrouter_key:
+    file: ./.local/openrouter.key

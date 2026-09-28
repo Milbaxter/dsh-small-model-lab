@@ -2,7 +2,9 @@
 
 **Cheap, honest, iterative testing of DeepSeek Harness (DSH) plugin setups, using a small Qwen model as the test subject.**
 
-Status: **plan only**. Nothing here has been built or run yet.
+Status: **P0 live smoke passed with Qwen3-8B through OpenRouter. UpCloud GPU deployment is deferred pending eligibility/quota. The private benchmark and improvement loop remain planned.**
+
+Start with [OpenRouter setup](docs/OPENROUTER.md) for hosted inference, or [the UpCloud P0 runbook](docs/RUNBOOK.md): read-only UpCloud preflight, pinned Qwen/vLLM Compose deployment, disposable DSH smoke runner, and local integration checks. The private task bank, baseline comparison and improvement loop remain planned.
 
 ## Why
 
