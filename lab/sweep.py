@@ -122,7 +122,11 @@ def reserved_memory_headroom():
     total=int(next(l.split()[1] for l in path.read_text().splitlines() if l.startswith('MemTotal:')))//1024
     ids=subprocess.check_output(['docker','ps','-q'],text=True).split()
     if not ids:return total
-    containers=json.loads(subprocess.check_output(['docker','inspect',*ids],text=True))
+    inspection=subprocess.run(['docker','inspect',*ids],text=True,capture_output=True)
+    # Containers owned by other jobs can disappear between ps and inspect.
+    # Treat an inconsistent snapshot as unavailable capacity and retry later.
+    if inspection.returncode:return 0
+    containers=json.loads(inspection.stdout)
     reserved=sum((c['HostConfig']['Memory']//1024**2) if c['HostConfig']['Memory'] else total for c in containers)
     return total-reserved
 

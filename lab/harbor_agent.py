@@ -50,14 +50,14 @@ class DSHAgent(BaseAgent):
         run_id=uuid.uuid4().hex
         token=ledger.register(run_id,max_requests=self.max_requests,max_tokens=self.max_tokens,
                               wall_seconds=self.wall_seconds+30,config=model)
-        pwd=await environment.exec('pwd',timeout_sec=10)
-        if pwd.return_code:raise RuntimeError('Cannot determine official task working directory')
-        payload={'arm':self.arm,'model':model,'instruction':instruction,'workspace':pwd.stdout.strip(),
-                 'gateway':self.gateway,'dsh_bin':'/opt/dsh-lab-runtime/dsh'}
-        with tempfile.TemporaryDirectory() as temporary:
-            file=Path(temporary)/'input.json';file.write_text(json.dumps(payload))
-            await environment.upload_file(file,'/tmp/dsh-input.json')
         try:
+            pwd=await environment.exec('pwd',timeout_sec=10)
+            if pwd.return_code:raise RuntimeError('Cannot determine official task working directory')
+            payload={'arm':self.arm,'model':model,'instruction':instruction,'workspace':pwd.stdout.strip(),
+                     'gateway':self.gateway,'dsh_bin':'/opt/dsh-lab-runtime/dsh'}
+            with tempfile.TemporaryDirectory() as temporary:
+                file=Path(temporary)/'input.json';file.write_text(json.dumps(payload))
+                await environment.upload_file(file,'/tmp/dsh-input.json')
             result=await environment.exec(
                 '/opt/dsh-lab-runtime/runtime/bin/python3 -m lab.harbor_worker < /tmp/dsh-input.json > /tmp/dsh-worker.stdout 2> /tmp/dsh-worker.stderr',
                 cwd='/opt/dsh-lab-runtime/lab', env={'LAB_VLLM_KEY':token,'PYTHONHOME':'/opt/dsh-lab-runtime/runtime',
@@ -73,5 +73,5 @@ class DSHAgent(BaseAgent):
             context.n_input_tokens=metrics['prompt_tokens'];context.n_output_tokens=metrics['completion_tokens']
             context.cost_usd=metrics['cost_usd']
             context.metadata={'arm':self.arm,'repetition':self.repetition,'gateway_run_id':run_id,
-                'accounting_complete':metrics['requests']==metrics['accounted_requests'],
+                'accounting_complete':metrics['requests']>0 and metrics['requests']==metrics['accounted_requests'],
                 'runtime_bundle_sha256':hashlib.sha256(self.bundle.read_bytes()).hexdigest()}

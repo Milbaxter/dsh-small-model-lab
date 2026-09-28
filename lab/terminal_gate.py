@@ -35,6 +35,7 @@ def freeze(dataset, target, version):
 
 def compare(lock, baseline, candidate, *, iteration=1):
     """Normalized records must originate from official Harbor result.json rewards."""
+    if type(iteration) is not int or iteration<1:raise ValueError('Iteration must be a positive integer')
     required={(t['id'],r) for t in lock['tasks'] for r in range(lock['k'])}
     def scores(rows):
         values={}
@@ -45,10 +46,15 @@ def compare(lock, baseline, candidate, *, iteration=1):
             if row.get('verifier')!='harbor-official':raise ValueError('Unofficial grading')
             if row.get('infrastructure_error') or not row.get('accounting_complete'):
                 raise ValueError('Independent gate has infrastructure or accounting gaps')
+            if not row.get('evaluation_fingerprint'):
+                raise ValueError('Missing pinned evaluation conditions')
             values[key]=row['reward']
         if set(values)!=required:raise ValueError('Full frozen task coverage is required')
         return values
     b,c=scores(baseline),scores(candidate)
+    conditions={(r['task_id'],r['repetition']):r['evaluation_fingerprint'] for r in baseline}
+    if any(conditions[r['task_id'],r['repetition']]!=r['evaluation_fingerprint'] for r in candidate):
+        raise ValueError('Independent comparison changed model, sampling, resources or budgets')
     # Report standard 95% CIs; use an alpha-spending bound for repeated selection.
     result=paired_change(b,c,repetitions=lock['k'])
     alpha=.05/(iteration*(iteration+1))

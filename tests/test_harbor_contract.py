@@ -3,6 +3,8 @@ import asyncio
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 try:
     from lab.harbor_agent import DSHAgent
@@ -12,6 +14,20 @@ except ImportError:
 
 @unittest.skipIf(DSHAgent is None,'Harbor extra not installed in the minimal runner test environment')
 class HarborContract(unittest.TestCase):
+    def test_early_environment_failure_closes_run_token(self):
+        class Environment:
+            async def exec(self,*args,**kwargs):raise RuntimeError('environment unavailable')
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);bundle=root/'runtime.tar.gz';bundle.write_bytes(b'fixture')
+            agent=DSHAgent(logs_dir=root/'logs',bundle=str(bundle),gateway='http://gateway:8000/v1')
+            context=SimpleNamespace()
+            with patch('lab.harbor_agent.Ledger') as ledger:
+                ledger.digest.return_value='no-trace'
+                with self.assertRaisesRegex(RuntimeError,'environment unavailable'):
+                    asyncio.run(agent.run('fixture',Environment(),context))
+                ledger.return_value.close.assert_called_once()
+                self.assertFalse(context.metadata['accounting_complete'])
+
     def test_setup_uses_pinned_bundle_and_checks_native_runtime(self):
         class Result:
             return_code=0

@@ -13,8 +13,9 @@ champion directly with the original plain DSH reference.
 
 Pin the official Terminal-Bench dataset and Harbor evaluator before the first
 scored run. Use the official task environments and verifiers. Current upstream
-release under inspection is Terminal-Bench 4.0.0; resource preflight and the DSH
-adapter must pass before starting it. No Terminal-Bench run has completed yet.
+release options inspected are 2.1 and 4.0.0. The CPU-only 2.1 path is prepared;
+resource preflight and the DSH adapter must pass before scoring it. No
+Terminal-Bench run has completed yet.
 
 For each paired comparison, use five repetitions per task. Report the baseline
 and candidate resolution percentages, their percentage-point difference, relative
@@ -62,3 +63,26 @@ credential-free export of the same pinned DSH runtime. Its setup contract has
 been checked against the installed Harbor source. It has **not** completed an
 official oracle or model trial yet. Runtime portability and gateway routing still
 need end-to-end validation on the dedicated benchmark worker before scored runs.
+
+The relocated ARM64 runtime passed an offline scripted tool check in a bare
+Debian Bookworm container for all three arms. This is portability evidence,
+not official benchmark evidence; the dedicated UpCloud worker uses AMD64 and
+still needs its own validation. Harbor owns task isolation. Its DSH worker uses
+the same `danger-full-access` filesystem mode for all arms, allowing official
+tasks to modify their disposable environment outside the initial directory.
+The regular private-suite worker is unchanged.
+
+`python -m lab.terminal_report --input <controller-manifest.json> --output <report.md>`
+produces an aggregate Markdown table and JSON evidence. It requires complete
+paired outcomes for the frozen suite, matching evaluation fingerprints, spend
+and token accounting, the original `standard` reference, and every numbered
+independent attempt. It reports each variant against plain DSH and the final
+champion against each variant. The caller must supply controller-normalized
+official Harbor results; automatic Harbor result ingestion is not implemented
+yet. This reporting path has fixture tests, not scored benchmark inputs.
+
+`lab.promotion` requires independent Terminal-Bench evidence as well as private
+development/held-out, two-model transfer, matched-budget, cost, leakage and
+separate review gates. `lab.proposer` exports a whitelist of dev-only evidence
+and generates policy modules from text. These are tested components; the full
+automated proposal-to-promotion loop is not yet running.

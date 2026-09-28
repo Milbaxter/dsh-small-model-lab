@@ -10,6 +10,14 @@ from lab.smoke import main
 
 
 class ControllerTests(unittest.TestCase):
+    def test_capacity_snapshot_race_waits_instead_of_crashing(self):
+        from lab.sweep import reserved_memory_headroom
+        with patch('lab.sweep.Path.exists',return_value=True), \
+             patch('lab.sweep.Path.read_text',return_value='MemTotal: 4194304 kB\n'), \
+             patch('lab.sweep.subprocess.check_output',return_value='gone\nlive\n'), \
+             patch('lab.sweep.subprocess.run',return_value=subprocess.CompletedProcess([],1,'[]','No such object')):
+            self.assertEqual(reserved_memory_headroom(),0)
+
     def test_timeout_removes_container_and_records_failure(self):
         with tempfile.TemporaryDirectory() as directory:
             with patch.dict(os.environ, {"LAB_RUNS_DIR": directory}), \
