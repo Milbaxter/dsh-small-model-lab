@@ -12,7 +12,7 @@ from lab.statistics import paired_change, quantile
 def summarize(rows, repetitions=5, expected_tasks=None):
     groups=defaultdict(list)
     for row in rows:groups[row['arm'],row['split'],row['model']].append(row)
-    report={'kind':'private_suite','provisional':False,'cells':[],'comparisons':[]}
+    report={'kind':'private_suite','provisional':not bool(rows),'cells':[],'comparisons':[]}
     for (arm,split,model),items in sorted(groups.items()):
         by_task=defaultdict(list)
         for item in items:by_task[item['task_id']].append(item)
@@ -50,6 +50,15 @@ def summarize(rows, repetitions=5, expected_tasks=None):
             report['provisional']=True;continue
         report['comparisons'].append({'reference':'standard','candidate':arm,'split':split,'model':model,
             **effect,'archetype_cluster_sensitivity_95ci_pp':sensitivity['paired_95ci_percentage_points']})
+    complete_models=[]
+    for model in {cell['model'] for cell in report['cells']}:
+        cells={(c['arm'],c['split']):c for c in report['cells'] if c['model']==model}
+        required={(a,s) for a in ('sdk-minimal','standard','standard+autonomy-policy') for s in ('dev','heldout')}
+        if required <= set(cells) and all(cells[k]['tasks']==40 and cells[k]['complete_repetitions']
+                and cells[k]['accounting_complete'] and cells[k]['context_compaction_coverage_valid'] for k in required):
+            complete_models.append(model)
+    report['complete_baseline_models']=sorted(complete_models)
+    if not complete_models:report['provisional']=True
     report['independent_terminal_bench']='not represented by this report; required separately'
     return report
 
