@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.local/
+runs/
+private-tasks/
+
+node_modules/
+
+.venv-harbor/

@@ -1,0 +1,12 @@
+{
+  "benchmark": "Terminal-Bench",
+  "version_status": "2.1 CPU-only path prepared; optional user version question pending",
+  "reference_arm": "standard",
+  "initial_candidates": ["standard+autonomy-policy"],
+  "repetitions": 5,
+  "reported_measures": ["baseline_success_pct", "candidate_success_pct", "change_percentage_points", "relative_change_pct", "paired_95ci_percentage_points", "tokens_per_solve", "cost_usd"],
+  "development_feedback": "private dev only",
+  "task_selection": "full official suite, frozen before candidate changes",
+  "required_evidence": ["official oracle validation", "official verifiers", "identical task and sampling settings", "complete per-run accounting", "resource preflight", "paired improvement", "final champion vs original plain DSH"],
+  "status": "unrun; no improvement claim"
+}

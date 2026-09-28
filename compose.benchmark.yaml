@@ -1,0 +1,32 @@
+name: dsh-small-model-benchmark
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.gateway
+    environment:
+      LAB_VLLM_KEY: ${LAB_VLLM_KEY:?Set the local gateway key}
+      LAB_BENCHMARK: '1'
+    secrets: [openrouter_key]
+    volumes:
+      - ./.local/bench-audit:/audit
+    networks: [egress, inference]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    cpus: 0.25
+    mem_limit: 128m
+    pids_limit: 64
+    oom_score_adj: 500
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+networks:
+  egress: {}
+  inference:
+    internal: true
+secrets:
+  openrouter_key:
+    file: ./.local/openrouter.key

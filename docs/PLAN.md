@@ -59,6 +59,7 @@ A candidate becomes champion only if **all** hold:
 4. Beats a **matched-budget control**: the current champion given the same extra inference (e.g. best-of-3). Rules out gains that are just more compute.
 5. Pareto: tokens per solved task within limit (default: no more than +25% unless capability gain is large).
 6. Leakage check passes: plugin text shares no task-specific strings with dev tasks.
+7. **Independent Terminal-Bench gate:** beat the frozen plain-DSH reference on official tasks under paired conditions; report percentage-point and relative change, uncertainty and cost. Compare the final champion directly with the original reference. See [TERMINAL_BENCH.md](TERMINAL_BENCH.md).
 
 ## Anti-benchmark-hacking rules
 - The proposer never sees held-out tasks, graders or per-task held-out results.

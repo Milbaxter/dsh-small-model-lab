@@ -1,0 +1,33 @@
+name: Lab plumbing
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: pip install -r requirements.lock
+      - run: python -m unittest discover -s tests -v
+  harbor-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.harbor.lock
+      - run: python -m unittest discover -s tests -p 'test_harbor_*.py' -v
+      - run: DSH_HARBOR_DOCKER_SMOKE=1 python -m unittest discover -s tests -p test_harbor_lifecycle.py -v

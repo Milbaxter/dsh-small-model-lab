@@ -1,0 +1,13 @@
+{
+  "model": "Qwen/Qwen3-8B",
+  "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+  "vllm_image": "vllm/vllm-openai:v0.30.0@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90",
+  "dtype": "bfloat16",
+  "max_model_len": 16384,
+  "max_num_seqs": 4,
+  "temperature": 0.7,
+  "top_p": 0.8,
+  "max_tokens": 2048,
+  "enable_thinking": false,
+  "seed": 1729
+}

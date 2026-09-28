@@ -1,0 +1,26 @@
+{
+  "date": "2026-09-28",
+  "kind": "plumbing_smoke_not_benchmark",
+  "status": "pass",
+  "model": "qwen/qwen3-8b",
+  "observed_provider": "Alibaba",
+  "dsh_sdk": "0.1.5rc1",
+  "dsh_runtime": "0.1.5rc1",
+  "profile": "sdk-minimal",
+  "requests": 3,
+  "prompt_tokens": 1210,
+  "completion_tokens": 96,
+  "reasoning_tokens": 0,
+  "reported_cost_usd": 0.00018525,
+  "wall_seconds": 5.809377503,
+  "expected_file": {
+    "status": "ok",
+    "sum": 42
+  },
+  "isolation": "disposable Docker runner, internal gateway network, no paid API key in runner",
+  "limitations": [
+    "Public connectivity fixture; not a held-out evaluation",
+    "Hosted weights and quantization are provider-managed",
+    "No baseline or plugin improvement claim"
+  ]
+}
