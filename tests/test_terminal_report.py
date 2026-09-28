@@ -9,7 +9,7 @@ class TerminalReportTests(unittest.TestCase):
         def rows(passes):
             return [{'task_id':t['id'],'repetition':r,'dataset_commit':'pinned','verifier':'harbor-official',
                 'evaluation_fingerprint':'fixed','accounting_complete':True,'reward':int(r<passes),
-                'tokens':100,'cost_usd':.01} for t in lock['tasks'] for r in range(5)]
+                'tokens':100,'cost_usd':.01,'evaluation_label':'Test fixture only'} for t in lock['tasks'] for r in range(5)]
         return dict(lock=lock,variants=[{'name':'standard','iteration':0,'rows':rows(2)},
             {'name':'improvement-one','iteration':1,'rows':rows(3)}],champion='improvement-one')
 

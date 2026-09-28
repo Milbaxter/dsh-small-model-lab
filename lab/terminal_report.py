@@ -17,6 +17,8 @@ def summarize(lock, variants, champion):
     if sorted(attempts)!=list(range(1,len(attempts)+1)):
         raise ValueError('Include every independent attempt in sequence, including rejected variants')
     baseline=by_name['standard']['rows'];final=by_name[champion]['rows']
+    labels={r.get('evaluation_label') for v in variants for r in v['rows']}
+    if len(labels)!=1 or None in labels:raise ValueError('A shared evaluation-budget label is required')
     rows=[]
     for variant in variants:
         comparison=compare(lock,baseline,variant['rows'],iteration=max(1,variant['iteration']))
@@ -33,12 +35,13 @@ def summarize(lock, variants, champion):
             'vs_original_plain_dsh':comparison,'final_champion_vs_this_variant':to_final,
             'tokens_per_solve':tokens/solved if solved else None,'cost_usd':cost})
     return {'benchmark':'Terminal-Bench','version':lock['version'],'dataset_commit':lock['dataset_commit'],
+        'evaluation_label':labels.pop(),
         'reference':'original-plain-dsh','champion':champion,'full_frozen_coverage':True,
         'rows':rows,'relative_change_note':'Undefined when the comparison reference scores zero.'}
 
 
 def markdown(report):
-    lines=[f"Terminal-Bench {report['version']} — final champion: {report['champion']}",'',
+    lines=[f"Terminal-Bench {report['version']} — final champion: {report['champion']}",'',report['evaluation_label'],'',
         '| Variant | Resolved | Δ vs plain DSH | Relative gain vs plain DSH | Champion gain vs variant | Spend |',
         '|---|---:|---:|---:|---:|---:|']
     def relative(value):return 'undefined' if value is None else f'{value:+.2f}%'

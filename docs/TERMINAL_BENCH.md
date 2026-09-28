@@ -58,11 +58,11 @@ already shared by two servers, and both IPv4 slots are occupied. Full-suite
 execution therefore needs an UpCloud quota increase. Do not present a small
 resource-filtered subset as satisfying this full independent gate.
 
-`lab.harbor_agent:DSHAgent` is the adapter scaffold for official Harbor, using a
+`lab.harbor_agent:DSHAgent` is the adapter for official Harbor, using a
 credential-free export of the same pinned DSH runtime. Its setup contract has
 been checked against the installed Harbor source. It has **not** completed an
-official oracle or model trial yet. Runtime portability and gateway routing still
-need end-to-end validation on the dedicated benchmark worker before scored runs.
+official Terminal-Bench oracle or model trial yet. Runtime portability still
+needs end-to-end validation on the dedicated AMD64 worker before scored runs.
 
 The relocated ARM64 runtime passed an offline scripted tool check in a bare
 Debian Bookworm container for all three arms. This is portability evidence,
@@ -78,8 +78,16 @@ paired outcomes for the frozen suite, matching evaluation fingerprints, spend
 and token accounting, the original `standard` reference, and every numbered
 independent attempt. It reports each variant against plain DSH and the final
 champion against each variant. The caller must supply controller-normalized
-official Harbor results; automatic Harbor result ingestion is not implemented
-yet. This reporting path has fixture tests, not scored benchmark inputs.
+official Harbor results. `lab.harbor_control` now prepares a complete interleaved
+schedule, runs the official Harbor lifecycle and normalizes its results against
+frozen trial configurations and trusted gateway traces. A local synthetic oracle
+fixture passed through Harbor's real environment/verifier lifecycle. This is
+infrastructure evidence, not a Terminal-Bench score.
+
+The private gateway route passed on UpCloud from a separate Docker container.
+`compose.harbor.yaml` publishes only on the Docker bridge IPv4, with the paid key
+remaining gateway-only and per-run budgets unchanged. The dedicated-worker
+runbook is [TERMINAL_BENCH_RUNBOOK.md](TERMINAL_BENCH_RUNBOOK.md).
 
 `lab.promotion` requires independent Terminal-Bench evidence as well as private
 development/held-out, two-model transfer, matched-budget, cost, leakage and

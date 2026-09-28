@@ -17,7 +17,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 class DSHAgent(BaseAgent):
     def __init__(self,*args,arm='standard',repetition=0,bundle=None,gateway=None,
-                 wall_seconds=900,max_requests=64,max_tokens=600000,**kwargs):
+                 wall_seconds=900,max_requests=64,max_tokens=600000,model_config=None,**kwargs):
         super().__init__(*args,**kwargs)
         if arm not in ('sdk-minimal','standard','standard+autonomy-policy'):
             raise ValueError('Unknown registered DSH arm')
@@ -26,6 +26,7 @@ class DSHAgent(BaseAgent):
         self.gateway=gateway or os.environ.get('LAB_HARBOR_GATEWAY')
         if not self.gateway:raise ValueError('LAB_HARBOR_GATEWAY must point to the private budget gateway')
         self.wall_seconds=int(wall_seconds);self.max_requests=int(max_requests);self.max_tokens=int(max_tokens)
+        self.model_config=model_config
 
     @staticmethod
     def name():return 'dsh-small-model-lab'
@@ -45,7 +46,7 @@ class DSHAgent(BaseAgent):
 
     async def run(self,instruction,environment,context):
         ledger=Ledger(ROOT/'.local/bench-audit/budget.sqlite')
-        model=json.loads((ROOT/'config/openrouter.json').read_text())
+        model=json.loads(json.dumps(self.model_config)) if self.model_config else json.loads((ROOT/'config/openrouter.json').read_text())
         model.update(seed=1729+self.repetition,max_request_bytes=262144)
         run_id=uuid.uuid4().hex
         token=ledger.register(run_id,max_requests=self.max_requests,max_tokens=self.max_tokens,

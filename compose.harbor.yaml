@@ -1,0 +1,6 @@
+# Dedicated worker only. Bind to Docker's private bridge address, never 0.0.0.0.
+# Obtain the address with: docker network inspect bridge
+services:
+  gateway:
+    ports:
+      - "${LAB_HARBOR_BIND_IP:?Set the private Docker bridge IPv4}:18080:8000"
