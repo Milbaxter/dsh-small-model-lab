@@ -1,6 +1,15 @@
 # Infrastructure
 
-## Hardware decision
+## Status update 2026-09-28: UpCloud GPU blocked for now
+
+The UpCloud account quota is 6 CPU cores and 12 GB RAM, with no GPU allowed. The smallest L40S plan needs 8 cores and 64 GB. Credits expire 24 October 2026. A quota-increase request to support is pending.
+
+Revised plan while waiting:
+- **Model for P0–P2: hosted Qwen3-8B API** (OpenAI-compatible, pay per token). Listed at $0.117 / $0.455 per 1M input/output tokens on OpenRouter (one provider, 2026-09-28). Rough estimate: a 100-task × 5-run sweep at ~40k input / 3k output tokens per run is about 20M in + 1.5M out, so **~$3 per full sweep**. Verify tool-calling support on the chosen provider before relying on it, and pin the provider (hosted endpoints can change quantization or version silently).
+- **UpCloud credits: CPU box within current quota** (≤6 cores, ≤12 GB) to run DSH, the runner and task sandboxes.
+- **If the GPU quota is approved** early enough, move serving to the L40S (below) for full pinning control; rerun the baseline there, since results across providers are not comparable.
+
+## Hardware decision (original)
 
 - **Control machine:** existing MacBook Air (DSH, git, reading results). Not used for model serving.
 - **Model server:** UpCloud **NVIDIA L40S (48GB)** in Helsinki, paid from ~€400 existing credits.
